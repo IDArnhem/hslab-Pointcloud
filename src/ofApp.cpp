@@ -1,6 +1,6 @@
 #include "ofApp.h"
-#include "alvinutil.h"
 
+// ////////////////////////////////////////////////////////////////
 void ofApp::setup(){
     ofSetFrameRate(30);
     ofSetVerticalSync(true);
@@ -8,110 +8,52 @@ void ofApp::setup(){
 
     acquiring = false;
 
-    rs2::context ctx;
-    std::vector<rs2::pipeline>  pipelines;
+    vector<string> ids = ofxRealsense::get_serials();
+    if( ids.size() > 0 ) {
+        // print all available IDs
+        for(auto id : ids) {
+            ofLogNotice() << "RealSense device found with ID " << id;
+        }
 
-    // enumerate available devices
-    for(auto &&dev : ctx.query_devices()) {
-        rs2::config cfg;
-        ofLogNotice() << "RealSense device found with ID " << dev.get_info(RS2_CAMERA_INFO_SERIAL_NUMBER);
-        cfg.enable_device( dev.get_info(RS2_CAMERA_INFO_SERIAL_NUMBER) );
-        acquiring = true; // seems like we have a data source
-        pipe.start( cfg ); // open it
-        pipelines.push_back(pipe); // keep track of this pipeline
-    }
+        ofLogNotice() << "Initializing first available camera with ID " << ids[0];
+        ofxRealsense_Settings cfg;
+        cfg.depth_w = 848;
+        cfg.depth_h = 480;
+        cfg.depth_fps = 30;
+        cfg.rgb_w = 1920;
+        cfg.rgb_h = 1080;
+        cfg.rgb_fps = 30;
 
-    // show result of camera scan
-    if(acquiring) {
-        ofLogNotice() << "Number of camera pipelines " << pipelines.size();
+        rscam.setup(ids[0], cfg);
     } else {
-        ofLogWarning() << "No RealSense cameras were found! make sure you have one plugged in";
-    }
-/*
-    mSender = std::make_shared<UdpSender>();
-    mSender->addOnSendFn([](std::shared_ptr<Datagram> datagram) {
-        std::printf("Sent message!");
-    });
-*/
-}
-
-void ofApp::acquirePointCloud() {
-    // Get depth data from camera
-    auto frames = pipe.wait_for_frames();
-    auto color = frames.get_color_frame();
-    auto depth = frames.get_depth_frame();
-
-    // tell pointcloud object to map colors from video frame
-    pc.map_to(color);
-    points = pc.calculate(depth);
-
-    /*
-    auto textureCoordinates = points.get_texture_coordinates();
-    const unsigned char* colorData = static_cast<const unsigned char*>(color.get_data());
-
-    for (int i = 0; i < rs_points.size(); i++) {
-        int x = static_cast<int>(textureCoordinates[i].u * width);
-        int y = static_cast<int>(textureCoordinates[i].v * height);
-        int colorLocation = y * color_intrinsic.width + x;
-
-        float px = rs_vertices[i].x;
-        float py = rs_vertices[i].y;
-        float pz = rs_vertices[i].z;
-        unsigned char r = colorData[colorLoation];
-        unsigned char g = colorData[colorLocation + 1];
-        unsigned char b = colorData[colorLocation + 2];
-        save(px, py, pz, r, g, b);
-    }
-    */
-
-    // Create oF mesh
-    mesh.clear();
-    int n = points.size();
-    if(n!=0){
-        const rs2::vertex * vs = points.get_vertices();
-        for(int i=0; i<n; i++){
-            if(vs[i].z){
-                const rs2::vertex v = vs[i];
-                glm::vec3 v3(v.x,v.y,v.z);
-                mesh.addVertex(v3);
-                mesh.addColor(ofFloatColor(0,0,ofMap(v.z, 2, 6, 1, 0), 0.8));
-            } // if
-        } // for
-    } // if
-}
-
-//--------------------------------------------------------------
-void ofApp::update(){
-/*
-    std::shared_ptr<Message> datagram = std::make_shared<Message>("Hello world", "192.168.0.115", 8080);
-    mSender->send(datagram);
-*/
-
-    if(!acquiring) {
-        // do nothing
-        return;
-    } else {
-        acquirePointCloud();
+        ofLogWarning() << "No RealSense cameras detected, plug one and try again!";
     }
 }
 
-//--------------------------------------------------------------
-void ofApp::draw(){
+// ////////////////////////////////////////////////////////////////
+void ofApp::update() {
+    rscam.update();
+}
 
-    ofBackground(200);
-    cam.begin();
-    float s = 200;
-    ofScale(s,-s,-s);
-    ofDrawAxis(1);
+// ////////////////////////////////////////////////////////////////
+void ofApp::draw() {
+    float scale = 0.5f;
 
-    ofPushMatrix();
-    ofTranslate(0, 1, 0);
-    ofRotateZDeg(90);
-    ofSetColor(0,200);
-    ofDrawGridPlane(1, 5, true);
-    ofPopMatrix();
+    if ( !rscam.connected() ) return;
 
-    mesh.drawVertices();
+    rscam.get_depth_texture( depth );
+    //rscam.get_ir_texture( color );
+    rscam.get_color_texture( color );
 
-    cam.end();
+    // draw color feed
+    if ( color.isAllocated() ) {
+        ofSetColor(255);
+        color.draw(0, 0, color.getWidth() * scale, color.getHeight() * scale);
+    }
+
+    // draw depth feed
+    if ( depth.isAllocated() ) {
+        ofSetColor(255);
+        depth.draw(ofGetWidth()/2, 0, depth.getWidth() * scale, depth.getHeight() * scale);
+    }
 }

@@ -18,7 +18,7 @@ Project{
         ]
 
         of.addons: [
-            'ofxRealSense2'
+            'ofxRealsense'
         ]
 
         // additional flags for the project. the of module sets some
@@ -26,12 +26,12 @@ Project{
         // this flags can be augmented through the following properties:
         of.pkgConfigs: []       // list of additional system pkgs to include
         of.includePaths: [
-            '../../../addons/ofxRealsense2/libs/realsense2/include'
+            '../../../addons/ofxRealsense/libs/realsense2/include'
         ]     // include search paths
         of.cFlags: []           // flags passed to the c compiler
         of.cxxFlags: []         // flags passed to the c++ compiler
         of.linkerFlags: [
-            '/home/zilog/development/of_v0.10.1_linux64gcc6_release/addons/ofxRealsense2/libs/realsense2/lib/linux/librealsense2.so'
+            '/home/zilog/development/of_v0.10.1_linux64gcc6_release/addons/ofxRealsense/libs/realsense2/lib/linux/librealsense2.so'
         ]      // flags passed to the linker
         of.defines: []          // defines are passed as -D to the compiler
                                 // and can be checked with #ifdef or #if in the code

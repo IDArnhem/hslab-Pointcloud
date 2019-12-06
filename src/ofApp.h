@@ -1,29 +1,20 @@
 #pragma once
 
 #include "ofMain.h"
-//#include "ofxAsio.h"
-//#include <ofxRealSense2.h>
-#include <librealsense2/rs.hpp>
+#include "ofxRealsense.h"
 
-class ofApp : public ofBaseApp{
-	public:
-		void setup();
-		void update();
-		void draw();
+class ofApp : public ofBaseApp {
+public:
+    void setup();
+    void update();
+    void draw();
 
-        void acquirePointCloud();
+private:
+    bool acquiring;
 
-    private:
-        rs2::pipeline pipe;
-        rs2::device device;
+    ofxRealsense rscam;
 
-        rs2::points points;
-        rs2::pointcloud pc;
-
-        bool acquiring;
-
-        ofVboMesh mesh;
-        ofEasyCam cam;
-
-//        std::shared_ptr<ofxAsio::UdpSender> mSender;
+    ofTexture color;
+    ofTexture depth;
+    ofTexture infra;
 };
